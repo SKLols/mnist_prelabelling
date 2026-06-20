@@ -14,3 +14,6 @@ EPOCHS = 10
 
 # shared across all models
 NUM_CLASSES = 10
+
+# seed-set training
+VAL_FRACTION = 0.1
