@@ -52,6 +52,9 @@ print(f"Extraction took {elapsed:.1f} seconds")
 np.save("outputs/pool_embeddings.npy", pool_embeddings)
 print("Saved to outputs/pool_embeddings.npy")
 
+torch.save(cnn_model.state_dict(), "outputs/seed_classifier_weights.pth")
+print("Model weights saved to outputs/seed_classifier_weights.pth")
+
 run_data = {
     "script": "generate_pool_embeddings.py",
     "purpose": "train seed classifier + extract pool embeddings",
