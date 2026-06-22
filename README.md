@@ -51,24 +51,25 @@ the UMAP embedding visualization and the final accuracy JSON log.
 
 ## Running the pipeline
 
-### Option 1 — Docker (recommended, no GPU required)
+### Option 1 — Docker (recommended, no GPU required, ~25 min)
 
 ```bash
-docker-compose up --build
-```
-
-Or without compose:
-```bash
+# Build the image
 docker build -t mnist-prelabelling .
+
+# Run the pipeline
 docker run --rm \
   -v $(pwd)/outputs:/app/outputs \
   -v $(pwd)/data:/app/data \
   mnist-prelabelling
 ```
 
+> **Note on sudo:** Linux users may need `sudo` before docker commands.
+> Mac and Windows Docker Desktop users typically don't.
+
 > **CPU vs GPU in Docker:**
 > The default Dockerfile uses CPU-only PyTorch for portability (~25 min runtime).
-> For GPU acceleration, two changes are needed:
+> For GPU acceleration (~8 min), two changes are needed:
 >
 > 1. Install [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 > 2. In `Dockerfile`, replace the base image and PyTorch install:
@@ -85,7 +86,16 @@ docker run --rm \
 >     --index-url https://download.pytorch.org/whl/cu126
 > ```
 >
-> Then run with: `docker run --gpus all --rm -v $(pwd)/outputs:/app/outputs mnist-prelabelling`
+> Then run with:
+> ```bash
+> docker run --gpus all --rm \
+>   -v $(pwd)/outputs:/app/outputs \
+>   -v $(pwd)/data:/app/data \
+>   mnist-prelabelling
+> ```
+
+> **docker-compose:** A `docker-compose.yml` is included for users with
+> Docker Desktop or Docker Compose v2 (`docker compose up --build`).
 
 Each run creates a timestamped folder under `outputs/run_YYYYMMDD_HHMMSS/`
 containing all generated artifacts (embeddings, labels, plots, JSON logs).
