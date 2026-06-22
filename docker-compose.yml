@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  mnist-prelabelling:
+    build: .
+    volumes:
+      # Write outputs to host so results are accessible after container exits
+      - ./outputs:/app/outputs
+      # Cache MNIST data on host — avoids re-downloading on every docker run
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1  # ensures print() output appears immediately in logs

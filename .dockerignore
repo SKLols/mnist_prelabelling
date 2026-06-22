@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.git/
+outputs/
+data/
+.venv/
+venv/
+*.pth
+*.npy
+.dockerignore
+README.md
