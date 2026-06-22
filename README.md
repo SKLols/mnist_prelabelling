@@ -51,6 +51,11 @@ the UMAP embedding visualization and the final accuracy JSON log.
 
 ## Running the pipeline
 
+### MNIST data
+Downloaded automatically on first run via torchvision. Alternatively, download
+the four IDX files from the [CVDF MNIST mirror](https://github.com/cvdfoundation/mnist)
+and place them in `data/MNIST/raw/`.
+
 ### Option 1 — Docker (recommended, no GPU required, ~25 min)
 
 ```bash
@@ -119,11 +124,6 @@ mnist-prelabelling
 # or:
 python src/mnist_prelabelling/pipeline.py
 ```
-
-### MNIST data
-Downloaded automatically on first run via torchvision. Alternatively, download
-the four IDX files from the [CVDF MNIST mirror](https://github.com/cvdfoundation/mnist)
-and place them in `data/MNIST/raw/`.
 
 ### Individual pipeline steps (for debugging or partial runs)
 ```bash
