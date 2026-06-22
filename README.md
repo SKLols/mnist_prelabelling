@@ -159,9 +159,7 @@ mnist_prelabelling/
 
 │   ├── embeddings/      # Embedding extraction utility
 
-│   ├── clustering/      # UMAP visualization, KMeans, label assignment,
-
-│   │                    # error detection, iterative label correction
+│   ├── clustering/      # UMAP visualization, KMeans, label assignment, error detection, iterative label correction         
 
 │   ├── evaluation/      # Final accuracy reporting
 
