@@ -8,8 +8,8 @@ clustering and iterative unsupervised label correction.
 
 The pipeline treats the 10k test split as the only labeled data available,
 clusters embeddings learned from it to assign initial labels to the 60k pool,
-then iteratively refines those labels using unsupervised error detection —
-never accessing the pool's ground-truth labels during the labeling process.
+then iteratively refines those labels — never accessing the pool's ground-truth
+labels during the labeling process itself.
 
 ## Results
 
@@ -28,23 +28,18 @@ initialization. Representative numbers from a verified full pipeline run:
 
 Per-digit accuracy after final correction:
 
-| Digit | Accuracy |
-|---|---|
-| 0 | 99.16% |
-| 1 | 98.87% |
-| 2 | 97.82% |
-| 3 | 97.39% |
-| 4 | 97.93% |
-| 5 | 98.10% |
-| 6 | 99.32% |
-| 7 | 98.24% |
-| 8 | 96.17% |
-| 9 | 97.87% |
+| Digit | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Accuracy | 99.16% | 98.87% | 97.82% | 97.39% | 97.93% | 98.10% | 99.32% | 98.24% | 96.17% | 97.87% |
 
-Digit 8 remains the hardest class (~96%) due to visual similarity with 3, 5,
-and 9 in stroke structure. Accuracy peaks around iteration 3, then plateaus —
-consistent with the confirmation bias effect documented in the noisy-label
-literature.
+Digit 8 remains hardest (~96%) due to visual similarity with 3, 5, and 9.
+Accuracy peaks around iteration 3, then plateaus — consistent with the
+confirmation bias effect documented in the noisy-label literature.
+
+Sample outputs from a verified run are available in `results/` — including
+the UMAP embedding visualization and the final accuracy JSON log.
+
+![UMAP projection of pool embeddings](results/embeddings_2d_plot.png)
 
 ## Environment
 
@@ -54,33 +49,9 @@ literature.
 - CUDA Driver: 13.1 (PyTorch built against CUDA 12.6)
 - PyTorch: 2.12.1+cu126
 
-## Setup (local development with GPU)
-
-### Create conda environment
-```bash
-conda create -n mnist_prelabelling python=3.11 -y
-conda activate mnist_prelabelling
-```
-
-### Install PyTorch with CUDA support
-```bash
-pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
-```
-
-### Install the package and remaining dependencies
-```bash
-pip install -e .
-pip install scikit-learn umap-learn matplotlib scipy
-```
-
-### MNIST data
-Downloaded automatically on first run via torchvision. Alternatively, download
-the four IDX files from the [CVDF MNIST mirror](https://github.com/cvdfoundation/mnist)
-and place them in `data/MNIST/raw/`.
-
 ## Running the pipeline
 
-### Option 1 — Docker (recommended, CPU, no GPU required)
+### Option 1 — Docker (recommended, no GPU required)
 
 ```bash
 docker-compose up --build
@@ -95,25 +66,56 @@ docker run --rm \
   mnist-prelabelling
 ```
 
+> **CPU vs GPU in Docker:**
+> The default Dockerfile uses CPU-only PyTorch for portability (~25 min runtime).
+> For GPU acceleration, two changes are needed:
+>
+> 1. Install [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+> 2. In `Dockerfile`, replace the base image and PyTorch install:
+>
+> ```dockerfile
+> # Replace:
+> FROM python:3.11-slim
+> RUN pip install --no-cache-dir torch torchvision \
+>     --index-url https://download.pytorch.org/whl/cpu
+>
+> # With:
+> FROM nvidia/cuda:12.6.0-cudnn-runtime-ubuntu22.04
+> RUN pip install --no-cache-dir torch torchvision \
+>     --index-url https://download.pytorch.org/whl/cu126
+> ```
+>
+> Then run with: `docker run --gpus all --rm -v $(pwd)/outputs:/app/outputs mnist-prelabelling`
+
 Each run creates a timestamped folder under `outputs/run_YYYYMMDD_HHMMSS/`
-containing all generated artifacts.
+containing all generated artifacts (embeddings, labels, plots, JSON logs).
 
-> **Note:** The Docker image uses CPU-only PyTorch for portability — no CUDA
-> or NVIDIA drivers required on the host. For GPU-accelerated runs on larger
-> datasets, switch the base image to `nvidia/cuda:12.6.0-cudnn-runtime-ubuntu22.04`,
-> install CUDA-enabled PyTorch, and run with `docker run --gpus all ...`.
-> This is a one-line Dockerfile change.
-
-### Option 2 — local conda environment (GPU-accelerated)
+### Option 2 — local conda environment (GPU-accelerated, ~8 min)
 
 ```bash
+# Create environment
+conda create -n mnist_prelabelling python=3.11 -y
 conda activate mnist_prelabelling
-python src/mnist_prelabelling/pipeline.py
-# or:
+
+# Install PyTorch with CUDA 12.6
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+
+# Install package and remaining dependencies
+pip install -e .
+pip install scikit-learn umap-learn matplotlib scipy
+
+# Run
 mnist-prelabelling
+# or:
+python src/mnist_prelabelling/pipeline.py
 ```
 
-### Individual pipeline steps (for debugging)
+### MNIST data
+Downloaded automatically on first run via torchvision. Alternatively, download
+the four IDX files from the [CVDF MNIST mirror](https://github.com/cvdfoundation/mnist)
+and place them in `data/MNIST/raw/`.
+
+### Individual pipeline steps (for debugging or partial runs)
 ```bash
 python src/mnist_prelabelling/training/generate_pool_embeddings.py
 python src/mnist_prelabelling/clustering/cluster_embeddings.py
@@ -127,7 +129,7 @@ python src/mnist_prelabelling/evaluation/evaluate_prelabelling.py
 
 ### Optional verification scripts
 ```bash
-# Verify CustomCNN against published benchmarks (conventional MNIST split)
+# Verify CustomCNN against published benchmarks (conventional MNIST split, ~99%)
 python src/mnist_prelabelling/training/train.py
 
 # Verify seed classifier generalizes to the pool
@@ -143,16 +145,43 @@ python src/mnist_prelabelling/analysis/iterative_correction_experiment.py
 
 ## Project Structure
 
-```
-src/mnist_prelabelling/
-├── pipeline.py      # Main orchestrator — runs the full pipeline end-to-end
-├── config.py        # Hyperparameters, paths, random seed
-├── models/          # CNN architecture (CustomCNN: forward() + embed())
-├── training/        # Seed classifier training, embedding generation, retraining
-├── embeddings/      # Embedding extraction utility
-├── clustering/      # UMAP visualization, KMeans clustering, label assignment,
-│                    # error detection, iterative label correction
-├── evaluation/      # Final accuracy reporting (before/after correction)
-├── analysis/        # Offline strategy-selection experiments (use GT)
-└── utils/           # Run logging utility
-```
+mnist_prelabelling/
+
+├── src/mnist_prelabelling/
+
+│   ├── pipeline.py      # Main orchestrator — runs the full pipeline end-to-end
+
+│   ├── config.py        # Hyperparameters, paths, random seed
+
+│   ├── models/          # CNN architecture (CustomCNN: forward() + embed())
+
+│   ├── training/        # Seed classifier, embedding generation, pool retraining
+
+│   ├── embeddings/      # Embedding extraction utility
+
+│   ├── clustering/      # UMAP visualization, KMeans, label assignment,
+
+│   │                    # error detection, iterative label correction
+
+│   ├── evaluation/      # Final accuracy reporting
+
+│   ├── analysis/        # Offline strategy-selection experiments (use GT)
+
+│   └── utils/           # Run logging utility
+
+├── docs/                # Architecture, pipeline design, and results documentation
+
+├── results/             # Sample outputs from a verified run (plot + accuracy JSON)
+
+├── Dockerfile           # CPU-only by default; GPU instructions in README
+
+├── docker-compose.yml
+
+└── pyproject.toml       # Package metadata and entry point
+
+## Documentation
+
+See `docs/` for:
+- `ARCHITECTURE.md` — design decisions, model choice, method rationale
+- `PIPELINE.md` — step-by-step data flow and intermediate outputs
+- `RESULTS.md` — detailed accuracy analysis and per-digit breakdown

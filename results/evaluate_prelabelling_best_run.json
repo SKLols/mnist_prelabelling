@@ -1,0 +1,16 @@
+{
+  "script": "evaluate_prelabelling.py",
+  "purpose": "official pre-labelling accuracy before vs after correction",
+  "results": {
+    "accuracy_before_correction": 0.9620666666666666,
+    "accuracy_per_iteration": {
+      "0": 0.9766333333333334,
+      "1": 0.9802166666666666,
+      "2": 0.98115,
+      "3": 0.9814,
+      "4": 0.9809833333333333
+    },
+    "accuracy_after_correction": 0.9809833333333333,
+    "improvement_percentage_points": 1.8916666666666693
+  }
+}
